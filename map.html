@@ -62,6 +62,7 @@
        let citySelect = document.getElementById("city-select");
        var marker;
        let dataCountry ;
+       let ContCityInner;
        let optionTagList ;
        let CitySelectTag 
        let arrayCountryList = [];
@@ -95,15 +96,24 @@
              });
         }
          */
+          //Inner joined Apli Call
+          let getContCityInJoinOnLoad = async () => {
+                 let response = await fetch("https://laravel-world.com/api/countries");
+             let ContCityIndatas = await response.json();
+             ContCityInner = await ContCityIndatas;
+             ContCityInner.data.forEach(value =>  {
+                 arrayCountryList.push(value.name); 
+                 //arrayCountryList.push(value.Id); this code call the store County id in array
+         });
+         return ContCityIndatas; 
+        }
 
         let getCountriesOnLoad = async () => {
           let response = await fetch("https://laravel-world.com/api/countries");
           let datas = await response.json();
            dataCountry = await datas;
            dataCountry.data.forEach(value =>  {
-            arrayCountryList.push(value.name); // remove this line when url loaded by our project 
-        /*     //this code call the store County id in array. And embedded the marker. And hightlight default marker, if it is set in database.
-           arrayCountryList.push(value.Id);
+        /*     //. And embedded the marker. And hightlight default marker, if it is set in database.
             marker = L.marker([value.lat, value.lng]).addTo(map);
              if(value.defaultMarker){
               marker._icon.classList.add("huechange");
@@ -147,6 +157,7 @@
         */
 
         let mainFunc = async () => {
+          await getContCityInJoinOnLoad();
            await getCountriesOnLoad();
          /* //this code call the getCityOnLoad function. and embed SELECT-TAG  data in div of body.
            await getCityOnLoad(Id); //uncomment this line when url loaded by our project
@@ -172,7 +183,7 @@
           var selectedOption = this.options[this.selectedIndex];
           var ValueCounty = selectedOption.value; // remove this line when url loaded by our project 
           var position = selectedOption.value.split(",");
-          // var Id = parseFloat(position[0]); //uncomment this line when url loaded by our project
+          //var Id = parseFloat(position[0]); //uncomment this line when url loaded by our project
           let findCountry =  arrayCountryList.includes(ValueCounty); // remove this line when url loaded by our project 
           // let findCountry =  arrayCountryList.includes(Id); //uncomment this line when url loaded by our project
           if (findCountry) {
