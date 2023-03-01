@@ -5,13 +5,28 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      />
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"rel="stylesheet" crossorigin="anonymous"/>
-
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" defer></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      crossorigin="anonymous"
+      />
+    <script
+      src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"
+      type="text/javascript"></script>
+    <script
+      src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+      defer></script>
 
     <style>
+      .leaflet-bottom.leaflet-right {
+        display: none !important;
+      }
+
       .form-select:focus,
       .form-select:active {
         outline: none !important;
@@ -31,9 +46,10 @@
       img.huechange {
         filter: hue-rotate(120deg);
       }
+
       a {
-          color: black;
-          text-decoration: none;
+        color: black;
+        text-decoration: none;
       }
 
       .Home_TextFocus_Body {
@@ -55,189 +71,409 @@
         margin-left: 5px;
       }
     </style>
-    <script>
-      window.onload = function () {
-        
-       let countryselect = document.getElementById("country-select");
-       let citySelect = document.getElementById("city-select");
-       var marker;
-       let dataCountry ;
-       let ContCityInner;
-       let optionTagList ;
-       let CitySelectTag 
-       let arrayCountryList = [];
-       let EmpDiv;
+    <script type="text/javascript">
+      var marker;
+      let defaultLat = 41.8719;
+      let defaultLang = 12.5674;
+      var map;
+      let EmpDiv;
 
-       citySelect.style.display = "none"
-       var map = L.map("map").setView([41.8719, 12.5674], 6);
-       L.tileLayer(
+      window.onload = function () {
+        let data;
+        let dataCountry;
+        let dataCity;
+        let ContCityInner;
+        let CountryOptionTagList = "";
+        let CityoptionTagList = "";
+        let CountrySelectTag;
+        let CountryDefaultMarkerId;
+        let CitySelectTag;
+        let arrayCountryList = [];
+        let CountryId = "";
+        let CityId = "";
+        let EmpDiv;
+
+        map = L.map("map").setView([defaultLat, defaultLang], 6);
+        L.tileLayer(
           "https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png",
           {
             attribution: " ",
           }
         ).addTo(map);
 
-        /* // Note-> url serch by CountyId column // this code prepare the result of Employee List based on country  
-        let EmpListByCounty = async (id) =>{
-             let responseEmp = await fetch(""+id);
-             let datasEmp = await responseEmp.json();
-             datasEmp.forEach((value)=>{
-                    EmpDiv =   "<div class='Home_TextFocus_Body py-0 px-1'> <div class='Right-WidthDivisionImage'>  <img class='card-img-top' style='max-width:130px;' alt='Card image cap' src='"+ value.imageUrl+"'></div> <div class='Right-WidthDivisionText pt-3'><h4 class='mb-0' style='font-family: PG_Fonts_LatoLightItalic;'>"+ value.name +"</h4><label class='PG_InnerPage_HeaderSubTitle text-center small pb-2'>" + value.Department + "</label><p class='card-text'><span><a title='' style='display: block;' href='mailto:"+ value.Email +"'>"+ value.Email +"</a> </span> <span class='Telefono'>"+ value.Phone +"</span></p></div>  </div><hr style='border-top: dotted 1px;'>"
-             });
-        }
-         */
+        //Inner joined Apli Call
+        let getContCityInJoinOnLoad = async () => {
+          let response = await fetch(
+            "https://localhost:7295/api/GolbalPresence/GetJoinedCountry"
+          );
+          let dataContent = await response.json();
+          dataContent.forEach((value) => {
+            arrayCountryList.push(value.Name);
+          });
+          return dataContent;
+        };
+        // Note-> url serch by CountyId column // this code prepare the result of Employee List based on country
+        let EmpListByCounty = async (id) => {
+          try {
+            let response = await fetch(
+              "https://localhost:7295/api/GolbalPresence/GetVcardByCountry/" +
+                id
+            );
+            let dataContent = await response.json();
+            CountryId = "";
+            EmpDiv = "";
+            dataContent.forEach((Result) => {
+              Result.forEach((value) => {
+                EmpDiv +=
+                  "<div class='Home_TextFocus_Body py-0 px-1'> <div class='Right-WidthDivisionImage'>  <img class='card-img-top' style='max-width:130px;' alt='Card image cap' src='" +
+                  value.CdComme +
+                  "'></div> <div class='Right-WidthDivisionText pt-3'><h4 class='mb-0' style='font-family: PG_Fonts_LatoLightItalic;'>" +
+                  value.Name +
+                  "</h4><label class='PG_InnerPage_HeaderSubTitle text-center small pb-2'>" +
+                  value.Role +
+                  "</label><p class='card-text'><span><a title='' style='display: block;' href='mailto:" +
+                  value.Email +
+                  "'>" +
+                  value.Email +
+                  "</a> </span> <span class='Telefono'>" +
+                  value.Phone +
+                  "</span></p></div>  </div><hr style='border-top: dotted 1px;'>";
+              });
+            });
+            document.querySelector(".EmpData").outerHTML =
+              "<div class='EmpData'>" + EmpDiv;
+            +"</div>";
+          } catch (error) {
+            console.log(error);
+          }
+        };
 
-         /* // Note-> url serch by CityId column   // this code prepare the result of Employee List based on City  
-        let EmpListByCity = async (id) =>{
-             let responseEmp = await fetch(""+id);
-             let datasEmp = await responseEmp.json();
-             datasEmp.forEach((value)=>{
-                    EmpDiv =   "<div class='Home_TextFocus_Body py-0 px-1'> <div class='Right-WidthDivisionImage'>  <img class='card-img-top' style='max-width:130px;' alt='Card image cap' src='"+ value.imageUrl+"'></div> <div class='Right-WidthDivisionText pt-3'><h4 class='mb-0' style='font-family: PG_Fonts_LatoLightItalic;'>"+ value.name +"</h4><label class='PG_InnerPage_HeaderSubTitle text-center small pb-2'>" + value.Department + "</label><p class='card-text'><span><a title='' style='display: block;' href='mailto:"+ value.Email +"'>"+ value.Email +"</a> </span> <span class='Telefono'>"+ value.Phone +"</span></p></div>  </div><hr style='border-top: dotted 1px;'>"
-             });
-        }
-         */
-          //Inner joined Apli Call
-          let getContCityInJoinOnLoad = async () => {
-                 let response = await fetch("https://laravel-world.com/api/countries");
-             let ContCityIndatas = await response.json();
-             ContCityInner = await ContCityIndatas;
-             ContCityInner.data.forEach(value =>  {
-                 arrayCountryList.push(value.name); 
-                 //arrayCountryList.push(value.Id); this code call the store County id in array
-         });
-         return ContCityIndatas; 
-        }
+        // Note-> url serch by CityId column   // this code prepare the result of Employee List based on City
+        let EmpListByCity = async (id) => {
+          try {
+            let response = await fetch(
+              "https://localhost:7295/api/GolbalPresence/GetVcardByCity/" + id
+            );
+            let dataContent = await response.json();
+            CityId = "";
+            EmpDiv = "";
+            dataContent.forEach((Result) => {
+              Result.forEach((value) => {
+                EmpDiv +=
+                  "<div class='Home_TextFocus_Body py-0 px-1'> <div class='Right-WidthDivisionImage'>  <img class='card-img-top' style='max-width:130px;' alt='Card image cap' src='" +
+                  value.CdComme +
+                  "'></div> <div class='Right-WidthDivisionText pt-3'><h4 class='mb-0' style='font-family: PG_Fonts_LatoLightItalic;'>" +
+                  value.Name +
+                  "</h4><label class='PG_InnerPage_HeaderSubTitle text-center small pb-2'>" +
+                  value.Role +
+                  "</label><p class='card-text'><span><a title='' style='display: block;' href='mailto:" +
+                  value.Email +
+                  "'>" +
+                  value.Email +
+                  "</a> </span> <span class='Telefono'>" +
+                  value.Phone +
+                  "</span></p></div>  </div><hr style='border-top: dotted 1px;'>";
+              });
+            });
+            document.querySelector(".EmpData").outerHTML =
+              "<div class='EmpData'>" + EmpDiv + "</div>";
+          } catch (error) {
+            console.log(error);
+          }
+        };
 
         let getCountriesOnLoad = async () => {
-          let response = await fetch("https://laravel-world.com/api/countries");
-          let datas = await response.json();
-           dataCountry = await datas;
-           dataCountry.data.forEach(value =>  {
-        /*     //. And embedded the marker. And hightlight default marker, if it is set in database.
-            marker = L.marker([value.lat, value.lng]).addTo(map);
-             if(value.defaultMarker){
-              marker._icon.classList.add("huechange");
-             } */
-           });
-           /*  // this code call the EmpListByCounty function. and embed Employee list data in body 
-          var id = value.id;
-          await EmpListByCounty(id);
-          document.getElementsByClassName("EmpData").outerHTML = "<div class='EmpData'>" + EmpDiv;  + "</div>";*/
-          return datas; 
-        }
+          try {
+            let response = await fetch(
+              "https://localhost:7295/api/GolbalPresence/GetAllCountry"
+            );
+            let dataContent = await response.json();
+            let lat;
+            let lng;
+            dataContent.forEach((value) => {
+              //. And embedded the marker. And hightlight default marker, if it is set in database.
+              CountryOptionTagList +=
+                "<option value=" +
+                "'" +
+                value.Id +
+                "," +
+                value.Latitude +
+                "," +
+                value.Longitude +
+                "," +
+                value.Name +
+                "'" +
+                value.DefaultMarker +
+                ">" +
+                value.Name +
+                "</option>";
+              lat = parseFloat(value.Latitude);
+              lng = parseFloat(value.Longitude);
+              if (value.DefaultMarker) {
+                CountryDefaultMarkerId = value.Id;
+                if (lat && lng) {
+                  marker = L.marker([lat, lng]).addTo(map);
+                  //marker._icon.classList.add("huechange");
+                }
+              } else {
+                if (lat && lng) {
+                  marker = L.marker([lat, lng]).addTo(map);
+                }
+              }
+            });
+            return dataContent;
+          } catch (error) {
+            console.log(error);
+          }
+        };
 
-        /*   //this code fetch data by CountyID(foreignkey) and get the data in json.  prepare the result of City Option Tag List. And embedded the marker. And hightlight default marker, if it is set in database.
-        const getCityOnLoad = async (Id)=>{
-          let response = await fetch(""+Id);
-              let data = await response.json;
-             await data.forEach((value)=>{
-                if(value.defaultMarker){
-                  optionTagList += "<option value=" + value.id + "," + value.lat + "," + value.lng + "selected>" + value.cityname + "</option>"
+        const getAllCityMarker = async () => {
+          try {
+            let response = await fetch(
+              "https://localhost:7295/api/GolbalPresence/GetAllCity"
+            );
+            let dataContent = await response.json();
+            let lat;
+            let lng;
+            dataContent.forEach((value) => {
+              lat = parseFloat(value.Latitude);
+              lng = parseFloat(value.Longitude);
+              if (value.DefaultMarker) {
+                if (lat && lng) {
+                  marker = L.marker([lat, lng]).addTo(map);
                   marker._icon.classList.add("huechange");
                 }
-                else{
-                     marker = L.marker([value.lat, value.lng]).addTo(map);
-                  optionTagList += "<option value=" + value.id + "," + value.lat + "," + value.lng + ">" + value.cityname + "</option>"
+              } else {
+                if (lat && lng) {
+                  marker = L.marker([lat, lng]).addTo(map);
                 }
-              });
-                // this code call the EmpListByCity function. and embed Employee list data in body 
-          await EmpListByCity(Id);
-          document.getElementsByClassName("EmpData").outerHTML = "<div class='EmpData'>" + EmpDiv;  + "</div>";
-        }
-        */
+              }
+            });
+          } catch (error) {
+            console.log(error);
+          }
+        };
 
-          /* //  //this code fetch data by CountyID(foreignkey) and get the data in json.  prepare the result of City Option Tag List.
-        let getCityOnClick = async (Id)=>{
-          let response = await fetch(""+Id);
-              let data = await response.json;
-             await data.forEach((value)=>{
-                 optionTagList += "<option value=" + value.id + "," + value.lat + "," + value.lng + "selected>" + value.cityname + "</option>"
-              });
-        }
-        */
+        //this code fetch data by CountyID(foreignkey) and get the data in json.  prepare the result of City Option Tag List. And embedded the marker. And hightlight default marker, if it is set in database.
+        const getCityOnLoad = async (Id) => {
+          try {
+            let response = await fetch(
+              "https://localhost:7295/api/GolbalPresence/GetCity/" + Id
+            );
+            let dataContent = await response.json();
+            dataContent.forEach((value) => {
+              if (value.DefaultMarker) {
+                CityId = value.Id;
+                CityoptionTagList +=
+                  "<option value=" +
+                  "'" +
+                  value.Id +
+                  "," +
+                  value.Latitude +
+                  "," +
+                  value.Longitude +
+                  "," +
+                  value.Name +
+                  "'" +
+                  value.DefaultMarker +
+                  ">" +
+                  value.Name +
+                  "</option>";
+              } else {
+                CityoptionTagList +=
+                  "<option value=" +
+                  "'" +
+                  value.Id +
+                  "," +
+                  value.Latitude +
+                  "," +
+                  value.Longitude +
+                  "," +
+                  value.Name +
+                  "'" +
+                  value.DefaultMarker +
+                  ">" +
+                  value.Name +
+                  "</option>";
+              }
+            });
+            await EmpListByCity(CityId);
+            return dataContent;
+          } catch (error) {
+            console.log(error);
+          }
+        };
+
+        //  //this code fetch data by CountyID(foreignkey) and get the data in json.  prepare the result of City Option Tag List.
+        let getCityOnClick = async (Id) => {
+          let response = await fetch(
+            "https://localhost:7295/api/GolbalPresence/GetCity/" + Id
+          );
+          let dataContent = await response.json();
+          let ClickCityoptionTagList = "";
+          dataContent.forEach((value) => {
+            if (value.DefaultMarker) {
+                CityId = value.Id;
+                EmpListByCity(CityId);
+                ClickCityoptionTagList +=
+                  "<option value=" +
+                  "'" +
+                  value.Id +
+                  "," +
+                  value.Latitude +
+                  "," +
+                  value.Longitude +
+                  "," +
+                  value.Name +
+                  "'" +
+                  value.DefaultMarker +
+                  ">" +
+                  value.Name +
+                  "</option>";
+              } else {
+                ClickCityoptionTagList +=
+                  "<option value=" +
+                  "'" +
+                  value.Id +
+                  "," +
+                  value.Latitude +
+                  "," +
+                  value.Longitude +
+                  "," +
+                  value.Name +
+                  "'" +
+                  value.DefaultMarker +
+                  ">" +
+                  value.Name +
+                  "</option>";
+              }
+            //ClickCityoptionTagList +=
+              // "<option value=" +
+              // "'" +
+              // value.Id +
+              // "," +
+              // value.Latitude +
+              // "," +
+              // value.Longitude +
+              // "," +
+              // value.Name +
+              // "'" +
+              // value.DefaultMarker +
+              // ">" +
+              // value.Name +
+              // "</option>";
+          });
+          CitySelectTagClick =
+            "<select class='form-select' id='city-select' onchange='CityFunction()'> <option selected>Select City</option>" +
+            ClickCityoptionTagList +
+            "</select>";
+          document.querySelector(".CityOuterhtml").innerHTML =
+            CitySelectTagClick;
+          cityOnChange = document.getElementById("city-select");
+        };
 
         let mainFunc = async () => {
           await getContCityInJoinOnLoad();
-           await getCountriesOnLoad();
-         /* //this code call the getCityOnLoad function. and embed SELECT-TAG  data in div of body.
-           await getCityOnLoad(Id); //uncomment this line when url loaded by our project
-        CitySelectTag = "<div class='CityInnerhtml'><select class='form-select' id='city-select'> <option selected>Select City</option>" + optionTagList + "</select></div>";
-        document.getElementsByClassName("CityInnerhtml").outerHtml = CitySelectTag; */
-        } 
+          await getAllCityMarker();
+          await getCountriesOnLoad();
+          CountrySelectTag =
+            "<div class='CountryOuterhtml'><select class='form-select' id='country-select' > <option selected>Select Country</option>" +
+            CountryOptionTagList +
+            "</select></div>";
+          document.querySelector(".CountryOuterhtml").outerHTML =
+            CountrySelectTag;
+
+          //this code call the getCityOnLoad function. and embed SELECT-TAG  data in div of body.
+          await getCityOnLoad(CountryDefaultMarkerId);
+          CitySelectTag =
+            "<div class='CityOuterhtml'><select class='form-select' id='city-select' onchange='CityFunction()'> <option selected>Select City</option>" +
+            CityoptionTagList +
+            "</select></div>";
+          document.querySelector(".CityOuterhtml").outerHTML = CitySelectTag;
+
+          let countryOnChange = document.getElementById("country-select");
+
+          // ArrayCountry  = ["Italy"];
+          countryOnChange.addEventListener("change", function () {
+            let selectedOption = this.options[this.selectedIndex];
+            var position = selectedOption.value.split(",");
+            let ValueCounty = position[3];
+            let Id = parseFloat(position[0]);
+            let findCountry = arrayCountryList.includes(ValueCounty);
+            if (findCountry) {
+              var OptionSelectTag = async () => {
+                await getCityOnClick(Id);
+              };
+              OptionSelectTag();
+              document.querySelector(".EmpData").outerHTML =
+                "<div class='EmpData'></div>";
+            } else {
+              document.querySelector(".CityOuterhtml").outerHTML =
+                "<div class='CityOuterhtml'></div>";
+              var countryName = selectedOption.text;
+              var position = selectedOption.value.split(",");
+              var lat = parseFloat(position[1]);
+              var lng = parseFloat(position[2]);
+              marker.setLatLng([lat, lng]);
+              document
+                .querySelector(".huechange")
+                .classList.remove("huechange");
+              marker._icon.classList.add("huechange");
+              marker.bindPopup("<b>" + countryName + "</b>");
+              map.setView([lat, lng], 6);
+              CountryId = parseFloat(position[0]);
+              EmpListByCounty(CountryId);
+            }
+          });
+        };
 
         mainFunc();
-
-        // start to remove below code line when url loaded by our project 
-            marker = L.marker([41.8719, 12.5674]).addTo(map);
-            marker = L.marker([44.14854173101319, 11.004108406250005]).addTo(map);
-            marker = L.marker([40.43788431923593, 15.816120125000005]).addTo(map);
-            marker = L.marker([20.5937, 78.9629]).addTo(map);
-            marker = L.marker([39.73, -104.8]).addTo(map);
-            marker = L.marker([39.77, -105.23]).addTo(map);
-        // Stope here to remove code 
-
-       // let ArrayCountry  = ["Italy"];
-     
-      countryselect.addEventListener("change", function () {
-        
-          var selectedOption = this.options[this.selectedIndex];
-          var ValueCounty = selectedOption.value; // remove this line when url loaded by our project 
-          var position = selectedOption.value.split(",");
-          //var Id = parseFloat(position[0]); //uncomment this line when url loaded by our project
-          let findCountry =  arrayCountryList.includes(ValueCounty); // remove this line when url loaded by our project 
-          // let findCountry =  arrayCountryList.includes(Id); //uncomment this line when url loaded by our project
-          if (findCountry) {
-            citySelect.style.display = "block"; //remove this line in the future
-            /* //this code call the getCityOnClick function. and embed SELECT-TAG  data in div of body.
-            var OptionSelectTag = async () => { 
-              //below code call the getCityOnClick function..
-               await getCityOnClick(ValueCounty); // remove this line when url loaded by our project 
-               //await getCityOnClick(Id); //uncomment this line when url loaded by our project
-            }
-            OptionSelectTag();
-            CitySelectTag = "<div class='CityInnerhtml'><select class='form-select' id='city-select'> <option selected>Select City</option>" + optionTagList + "</select></div>";
-            document.getElementsByClassName("CityInnerhtml").outerHTML = CitySelectTag; */
-          } else {
-            /*  // this code call the EmpListByCounty function. and embed Employee list data in body
-          var id = parseFloat(position[0]);
-          await EmpListByCounty(id);
-          document.getElementsByClassName("EmpData").outerHTML = "<div class='EmpData'>" + EmpDiv;  + "</div>";  */
-            citySelect.style.display  = "none"; // remove this line in the future
-            var countryName = selectedOption.text;
-            var position = selectedOption.value.split(",");
-            var lat = parseFloat(position[1]);
-            var lng = parseFloat(position[2]);
-            marker.setLatLng([lat, lng]);
-            marker._icon.classList.add("huechange");
-            marker.bindPopup(
-              "<b>" + countryName + "</b>"
-            );
-            map.setView([lat, lng], 6);
-          }
-        
-        });
-     
-
-        citySelect.addEventListener("change", function () {
-          /*  // this code call the EmpListByCity function. and embed Employee list data in body 
-          var Id = parseFloat(position[0]);
-          await EmpListByCity(Id);
-          document.getElementsByClassName("EmpData").outerHTML = "<div class='EmpData'>" + EmpDiv;  + "</div>"; */
-          var selectedOption = this.options[this.selectedIndex];
-          var countryName = selectedOption.text;
-          var position = selectedOption.value.split(",");
-          var lat = parseFloat(position[1]);
-          var lng = parseFloat(position[2]);
-          marker.setLatLng([lat, lng]);
-          marker._icon.classList.add("huechange");
-          marker.bindPopup(
-            "<b>" + countryName + "</b>"
-          );
-          map.setView([lat, lng], 6);
-        });
       };
 
-    
+      // Note-> url serch by CityId column   // this code prepare the result of Employee List based on City
+      let EmpListByCity = async (id) => {
+        let response = await fetch(
+          "https://localhost:7295/api/GolbalPresence/GetVcardByCity/" + id
+        );
+        let dataContent = await response.json();
+        EmpDiv = "";
+        dataContent.forEach((Result) => {
+          Result.forEach((value) => {
+            EmpDiv +=
+              "<div class='Home_TextFocus_Body py-0 px-1'> <div class='Right-WidthDivisionImage'>  <img class='card-img-top' style='max-width:130px;' alt='Card image cap' src='" +
+              value.CdComme +
+              "'></div> <div class='Right-WidthDivisionText pt-3'><h4 class='mb-0' style='font-family: PG_Fonts_LatoLightItalic;'>" +
+              value.Name +
+              "</h4><label class='PG_InnerPage_HeaderSubTitle text-center small pb-2'>" +
+              value.Role +
+              "</label><p class='card-text'><span><a title='' style='display: block;' href='mailto:" +
+              value.Email +
+              "'>" +
+              value.Email +
+              "</a> </span> <span class='Telefono'>" +
+              value.Phone +
+              "</span></p></div>  </div><hr style='border-top: dotted 1px;'>";
+          });
+        });
+        document.querySelector(".EmpData").outerHTML =
+          "<div class='EmpData'>" + EmpDiv + "</div>";
+      };
+
+      async function CityFunction() {
+        var cityOnChange = document.getElementById("city-select");
+        var selectedOption = cityOnChange.options[cityOnChange.selectedIndex];
+        var cityName = selectedOption.text;
+        var position = selectedOption.value.split(",");
+        var lat = parseFloat(position[1]);
+        var lng = parseFloat(position[2]);
+        document.querySelector(".huechange").classList.remove("huechange");
+        marker.setLatLng([lat, lng]);
+        marker._icon.classList.add("huechange");
+        marker.bindPopup("<b>" + cityName + "</b>");
+        map.setView([lat, lng], 6);
+        var Id = parseFloat(position[0]);
+        await EmpListByCity(Id);
+      }
     </script>
   </head>
 
@@ -247,82 +483,35 @@
         <h1 class="text-uppercase">select county</h1>
       </div>
       <div class="row py-5">
-        <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 align-self-start">
+        <div
+          class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 align-self-start">
           <div class="col-lg-10 col-xl-10 align-self-center">
             <div class="pt-4">
-              <select class="form-select" id="country-select">
-                <option selected>Select Country</option>
-                <option value="Italy">Italy</option>
-                <option value="India,20.5937,78.9629">India</option>
-                <option value="United States,40.7127753,-74.0059728">United States</option>
-                <option value="France,48.856614,2.352222">France</option>
-              </select>
+              <div class="CountryOuterhtml"></div>
             </div>
             <div class="py-4">
-              <div class="CityInnerhtml">
-
-              </div>
-              <select class="form-select" id="city-select">
-                <option selected>Select City</option>
-                <option value="Cityid,41.8719,12.5674">Rom</option>
-                <option value="CityId,44.14854173101319,11.004108406250005">
-                  Lizzo
-                </option>
-                <option value="CityId,40.43788431923593,15.816120125000005">
-                  Galvalio
-                </option>
-              </select>
+              <div class="CityOuterhtml"></div>
             </div>
             <div class="py-4">
-               <div class="EmpData">
-
-               </div>
-                <div class="" > 
-                    <div class="Home_TextFocus_Body py-0 px-1" >
-                      <div class="Right-WidthDivisionImage">
-                        <img class="card-img-top" style="max-width:130px;" alt="Card image cap" src="https://www.progold.com/Storage/UsersPhoto/BLUCLAD_BN/138.jpg">
-                      </div>
-                      <div class="Right-WidthDivisionText pt-3">
-                        <h4 class="mb-0" style="font-family: PG_Fonts_LatoLightItalic;">ELLIS ZAMBONI</h4>
-                        <label class="PG_InnerPage_HeaderSubTitle text-center small pb-2" >Technical Assistance Coating</label>
-                        <p class="card-text">
-                          <span>
-                            <a title="" style="display: block;" href="mailto:e.zamboni@bluclad.it">e.zamboni@bluclad.it</a>
-                          </span>
-                          <span class="Telefono">+39 055 4623234</span>
-                        </p>
-                      </div>
-                    </div>
-                    <hr style="border-top: dotted 1px;">
-                    <div class="Home_TextFocus_Body py-0 px-1" >
-                      <div class="Right-WidthDivisionImage">
-                        <img class="card-img-top" style="max-width:130px;" alt="Card image cap" src="https://www.progold.com/Storage/UsersPhoto/BLUCLAD_BN/87.jpg">
-                      </div>
-                      <div class="Right-WidthDivisionText pt-3">
-                        <h4 class="mb-0" style="font-family: PG_Fonts_LatoLightItalic; ">MARIO LAVANGA</h4>
-                        <label class="PG_InnerPage_HeaderSubTitle text-center small pb-2">Technical Assistance Coating</label>
-                        <p class="card-text">
-                          <span>
-                            <a title="" style="display: block;" href="mailto:m.lavanga@bluclad.it">m.lavanga@bluclad.it</a>
-                          </span>
-                          <span class="Telefono">+39 055 4623234</span>
-                        </p>
-                      </div>
-                    </div>
-                  
-                    <hr style="border-top: dotted 1px;">				 
-                </div>
+              <div class="EmpData"></div>
             </div>
           </div>
         </div>
-        <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 align-self-start">
+        <div
+          class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 align-self-start">
           <div id="map" style="height: 500px; width: 100%"></div>
         </div>
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+      defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
+      defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"
+      defer></script>
   </body>
 </html>
